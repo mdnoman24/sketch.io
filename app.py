@@ -117,8 +117,8 @@ def load_user(user_id):
     return None
 
 
-@app.before_first_request
-def before_first_request():
+# Initialize DB at startup
+with app.app_context():
     init_db()
 
 
