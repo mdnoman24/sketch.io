@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login – Sketch to Vision Classroom</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-gray-900 flex items-center justify-center px-4">
+    <div class="w-full max-w-md bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg">
+      <h1 class="text-xl font-semibold text-white mb-1 text-center">
+        Sketch to Vision AI – Classroom
+      </h1>
+      <p class="text-sm text-gray-400 mb-6 text-center">
+        {% if user_count == 0 %}
+          No accounts yet – create the first Teacher account.
+        {% else %}
+          Please sign in with your classroom account.
+        {% endif %}
+      </p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="space-y-2 mb-4">
+            {% for category, message in messages %}
+              <div class="text-sm px-3 py-2 rounded-md
+                          {% if category == 'error' %}bg-red-500/10 text-red-300 border border-red-500/40
+                          {% elif category == 'success' %}bg-emerald-500/10 text-emerald-300 border border-emerald-500/40
+                          {% else %}bg-gray-700 text-gray-100 border border-gray-600{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="space-y-4">
+        <div>
+          <label class="block text-sm text-gray-300 mb-1" for="username">Username</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            required
+            class="w-full rounded-md border border-gray-700 bg-gray-800 text-sm text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+          />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-300 mb-1" for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            class="w-full rounded-md border border-gray-700 bg-gray-800 text-sm text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full mt-2 py-2.5 rounded-md text-sm font-medium bg-pink-600 hover:bg-pink-500 text-white transition"
+        >
+          Sign in
+        </button>
+      </form>
+
+      <div class="mt-4 text-center text-xs text-gray-500">
+        {% if user_count == 0 %}
+          First time here? <a href="{{ url_for('register') }}" class="text-pink-400 hover:text-pink-300">Create Teacher account</a>
+        {% else %}
+          Teacher? <a href="{{ url_for('register') }}" class="text-pink-400 hover:text-pink-300">Add a student</a>
+        {% endif %}
+      </div>
+    </div>
+  </body>
+</html>

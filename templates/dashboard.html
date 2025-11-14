@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dashboard – Sketch to Vision Classroom</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      .scroll-container::-webkit-scrollbar {
+        width: 8px;
+      }
+      .scroll-container::-webkit-scrollbar-track {
+        background: #111827;
+      }
+      .scroll-container::-webkit-scrollbar-thumb {
+        background: #4b5563;
+        border-radius: 4px;
+      }
+      .scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #6b7280;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900 text-gray-100">
+    <div class="min-h-screen flex flex-col">
+      <!-- Header -->
+      <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-bold">
+            Sketch to Vision AI – Classroom
+          </h1>
+          <p class="text-xs text-gray-400 mt-1">
+            Logged in as <span class="font-semibold">{{ user.username }}</span>
+            {% if user.is_teacher %}<span class="ml-2 px-2 py-0.5 text-[10px] rounded-full bg-pink-600/20 text-pink-300 border border-pink-500/40">TEACHER</span>{% endif %}
+          </p>
+        </div>
+        <div class="flex gap-2 items-center">
+          {% if user.is_teacher %}
+            <a
+              href="{{ url_for('teacher_panel') }}"
+              class="px-3 py-2 text-xs font-medium rounded-md bg-gray-700 hover:bg-gray-600"
+            >
+              Teacher Panel
+            </a>
+          {% endif %}
+          <button
+            id="btn-export-json"
+            class="px-3 py-2 text-xs font-medium rounded-md bg-gray-700 hover:bg-gray-600"
+          >
+            Export JSON
+          </button>
+          <button
+            id="btn-export-pdf"
+            class="px-3 py-2 text-xs font-medium rounded-md bg-pink-600 hover:bg-pink-500"
+          >
+            Export PDF
+          </button>
+          <a
+            href="{{ url_for('logout') }}"
+            class="px-3 py-2 text-xs font-medium rounded-md bg-gray-800 hover:bg-gray-700 border border-gray-700"
+          >
+            Logout
+          </a>
+        </div>
+      </header>
+
+      <!-- Main content -->
+      <main class="flex-1 flex flex-col lg:flex-row">
+        <!-- Initial screen / upload pane -->
+        <section
+          id="initial-screen"
+          class="w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r border-gray-800 p-6 space-y-4"
+        >
+          <h2 class="text-lg font-semibold mb-2">
+            Start with a sketch
+          </h2>
+          <p class="text-xs text-gray-400 mb-2">
+            Upload a rough sketch and describe what you want it to become.
+          </p>
+          <form id="initial-form" class="space-y-4">
+            <!-- Dropzone -->
+            <div
+              id="dropzone"
+              class="relative flex items-center justify-center border-2 border-dashed border-gray-700 rounded-lg p-6 text-center cursor-pointer hover:border-pink-500 transition"
+            >
+              <div>
+                <p class="font-medium text-gray-300 mb-1">
+                  Click to upload or drag &amp; drop
+                </p>
+                <p class="text-sm text-gray-400">
+                  PNG, JPG, etc. up to 10MB
+                </p>
+              </div>
+              <input
+                id="sketch-input"
+                type="file"
+                accept="image/*"
+                class="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </div>
+
+            <!-- Preview -->
+            <div id="preview-container" class="hidden">
+              <p class="text-sm text-gray-400 mb-1">Sketch preview</p>
+              <img
+                id="sketch-preview"
+                class="max-h-64 rounded-md border border-gray-800"
+                alt="Sketch preview"
+              />
+            </div>
+
+            <!-- Prompt -->
+            <div>
+              <label
+                for="prompt-input"
+                class="block text-sm font-medium text-gray-300 mb-2"
+              >
+                Describe your vision
+              </label>
+              <textarea
+                id="prompt-input"
+                rows="4"
+                class="block w-full rounded-md bg-gray-800 border border-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                placeholder="Explain what this sketch should become: style, colors, mood, etc."
+              ></textarea>
+            </div>
+
+            <p
+              id="initial-error"
+              class="text-sm text-red-400 hidden"
+            ></p>
+
+            <button
+              id="btn-generate-initial"
+              type="submit"
+              class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-md bg-pink-600 hover:bg-pink-500 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <span id="initial-button-text">Generate</span>
+              <span
+                id="initial-spinner"
+                class="hidden h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+              ></span>
+            </button>
+          </form>
+        </section>
+
+        <!-- Conversation view -->
+        <section
+          id="conversation-section"
+          class="w-full lg:w-2/3 flex flex-col p-6"
+        >
+          <div
+            id="conversation-history"
+            class="flex-1 overflow-y-auto scroll-container space-y-4 border border-gray-800 rounded-lg p-4 bg-gray-950/40"
+          >
+            <p
+              id="conversation-empty"
+              class="text-sm text-gray-500 text-center"
+            >
+              Once you generate your first design, your creative journey will appear here.
+            </p>
+          </div>
+
+          <!-- New prompt input -->
+          <form
+            id="continue-form"
+            class="mt-4 flex items-center gap-2"
+          >
+            <input
+              id="continue-prompt"
+              type="text"
+              placeholder="Refine or extend your design..."
+              class="flex-1 rounded-md bg-gray-800 border border-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+            />
+            <button
+              id="btn-continue"
+              type="submit"
+              class="px-4 py-2 rounded-md bg-pink-600 hover:bg-pink-500 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Send
+            </button>
+          </form>
+          <p
+            id="continue-error"
+            class="text-sm text-red-400 mt-1 hidden"
+          ></p>
+        </section>
+      </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
